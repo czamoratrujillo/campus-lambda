@@ -1,4 +1,5 @@
 import boto3
+import check_status from check_status_layer
 
 def lambda_demo(event, context):
     ec2_resource = boto3.resource("ec2", region_name="us-east-1")
@@ -10,7 +11,7 @@ def lambda_demo(event, context):
 
     instance_ids = [instance.id for instance in instances]
 
-    # Stop instances
+    # Stop instances and check status
     for instance_id in instance_ids:
         instance = ec2_resource.Instance(instance_id)
 
@@ -20,9 +21,4 @@ def lambda_demo(event, context):
                 instance_name = tag['Value']
                 break
         instance.stop()
-    
-    ## Confirm  
-        if instance_name:
-            print(f'Instance "{instance_name}" stopped successfully')
-        else:
-            print(f'Instance "{instance_id}" stopped successfully')
+        check_status(instance_name)
