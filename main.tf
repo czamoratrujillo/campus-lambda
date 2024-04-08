@@ -24,7 +24,7 @@ data "aws_caller_identity" "current" {
 
 }
 
-## Lambda permission
+## Lambda cloudwatch permissions
 resource "aws_lambda_permission" "allow_cloudwatch" {
   statement_id   = "AllowExecutionFromCloudWatch"
   action         = "lambda:InvokeFunction"
@@ -42,6 +42,13 @@ resource "aws_lambda_function" "terraform_lambda_func" {
  handler                        = "lambda.lambda_handler"
  runtime                        = var.LAMBDA_RUNTIME
  depends_on                     = [aws_iam_role_policy_attachment.attach_iam_policy_to_iam_role.aws_cloudwatch_event_rule.aws_cloudwatch_event_target]
+ layers                         = [aws_lambda_layer_version.check_status_layer.arn]
+}
+
+## Create lambda layer 
+resource "aws_lambda_layer_version" "check_status_layer" {
+  filename      = "${path.module}/python/check_status_layer.py.zip"
+  layer_name    = "check_status_layer"
 }
 
 ## Cloudwatch event rule
@@ -54,7 +61,7 @@ resource "aws_cloudwatch_event_rule" "daily_rule" {
 ## Cloudwatch event trigger target
 resource "aws_cloudwatch_event_target" "daily_target" {
   rule  = "${aws_cloudwatch_event_rule.daily_rule.name}"
-  arn   = "${aws_lambda_function.cleanup_daily.arn}"
+  arn   = "${aws_lambda_function.daily_rule.arn}"
 }
 
 ## Generates zip file.
